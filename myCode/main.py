@@ -45,6 +45,7 @@ class Robot():
         self.angle_speed = 0.0  # 角速度
         self.line_speed = (0.0, 0.0)  # 线速度
         self.orientation = 0.0  # [-pi, pi] #方位角
+        self.pointx = 0 #机器人该去路径上的第几个点
 
     # The robot should go to the corresponding worktable(s) when it carries goods
     # 机器人在携带物品时，它能走向的对应工作台列表
@@ -432,6 +433,39 @@ def action():
             map_info.robots[i].forward(s)
 
 
+# 机器人沿着路线走
+def walk_through_path(route: list):
+    # robot_num = 0
+    for i in range(4):
+        num = map_info.robots[i].pointx
+        pointTo = route[num]   # 机器人要走第几个点的坐标信息
+
+        if action2(i, pointTo) < 0.1 and num < len(route)-1:   # 如果离下个点距离小于0.1，且不是最后一个点，说明该去下一个点了
+            map_info.robots[i].pointx += 1
+
+
+# 让指定机器人走去指定的坐标，返回到指定坐标的距离
+def action2(robot_num, dest: tuple)-> float:
+    d, dest_radian = dist(map_info.robots[robot_num].loc, dest)  # 到下一个点的距离和方位角
+    # 拿到当前机器人的方向
+    ori_radian = map_info.robots[robot_num].orientation
+    # 算出机器人转到目标方向的弧度（重要变量）
+    delta_radian = dest_radian - ori_radian
+    # 如果转动角度大于π，选择一个小角度进行转动
+    if abs(delta_radian) > np.pi:
+        delta_radian = delta_radian + 2 * np.pi if delta_radian < 0 else delta_radian - 2 * np.pi
+    # 转动到合适角度（在一个合适的误差范围内）
+    if abs(delta_radian) > 0.005:
+        map_info.robots[robot_num].rotate(delta_radian / 0.02)
+    # 开始往前走
+    else:
+        if d > 0.15:  # 以速度为2，那么必须减速的距离得大于0.15m（肯定有点误差，之后调参就行）
+            map_info.robots[robot_num].forward(2)
+        else:
+            map_info.robots[robot_num].forward(0)
+    return d
+
+
 if __name__ == '__main__':
     map_info = read_map()  # 读图
     finish()
@@ -445,5 +479,7 @@ if __name__ == '__main__':
         read_util_ok()  # 读取剩余信息
         sys.stdout.write('%d\n' % frame_id)  # 写当前帧
         task_manager()
-        action()
+        # action()
+        walk_through_path([(10, 20), (20, 20), (20, 40), (10, 40), (10, 20)])
+        # action2((30, 20))
         finish()
