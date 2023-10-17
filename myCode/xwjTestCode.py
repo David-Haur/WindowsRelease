@@ -1,13 +1,14 @@
 import sys
 import numpy as np
 import logging
+import queue
 
 # 地图长度常量，单位：米
 MAP_LENGTH = 50
 MAP_WIDTH = 50
 # 机器人数量
 ROBOT_NUM = 4
-# 每秒帧数 50 FPS
+# 每秒帧数 50 FPS，就是每秒50张图，5分钟就是5*60*50=15000张图，即15000个action
 FPS = 50
 # 初始资金 200000
 MONEY = 200000
@@ -53,10 +54,11 @@ class Robot:
         self.orientation = 0.0
         self.loc = (0, 0)
 
+
+        self.route = [] # 机器人的路线规划
+        self.task = 1  # 1 buy, 2 sell, 3   机器人的任务：买、卖以及销毁携带的物品
         self.on_task_dest = -1  # the worktable robot heading for 机器人的任务目标（以工作台的编号为目标），-1表示没有任务
-        self.task = 0  # 1 buy, 2 sell, 3   机器人的任务：买、卖以及销毁携带的物品
         self.check_flag = False  # 检查机器人是否携带有物品：False是没有，True是有
-        self.loc = (0, 0)  # 位置信息x,y
         self.goods_type_info = 0  # manual  把物品从机器人交给工作台的过渡，可以理解为机器人把物品给出去后的记录信息（记录刚刚给出去了哪个物品）
         self.optional_wt = []  # 根据机器人当前携带的物品，他能去的工作台列表
 
@@ -143,6 +145,15 @@ def vec_to_loc(x, y):
     :return: 返回地图坐标
     """
     return (x + 0.5) / 2, (y + 0.5) / 2
+
+
+def loc_to_vec(x, y):
+    """
+    :param x: 地图坐标x
+    :param y: 地图坐标y
+    :return: 返回地图数组下标
+    """
+    return int(x * 2 - 0.5), int(y * 2 - 0.5)
 
 
 def convert_to_binary(number):
@@ -243,13 +254,128 @@ def finish():
     sys.stdout.flush()
 
 
+def get_manhattan_distance(loc1, loc2):
+    """
+    get_distance: 计算两个点之间的曼哈顿距离
+    :param loc1: 点1坐标
+    :param loc2: 点2坐标
+    :return: 两点之间的曼哈顿距离
+    """
+    return np.abs(loc1[0] - loc2[0]) + np.abs(loc1[1] - loc2[1])
+
+
+def get_euclidean_distance(loc1, loc2):
+    """
+    get_distance: 计算两个点之间的欧式距离
+    :param loc1: 点1坐标
+    :param loc2: 点2坐标
+    :return: 两点之间的欧式距离
+    """
+    return np.sqrt(np.square(loc1[0] - loc2[0]) + np.square(loc1[1] - loc2[1]))
+
+
+def get_robot_to_which_wt_buy(robot):
+    """
+    运筹机器人去哪个工作台购买物品
+    :param robot: 机器人
+    :return:
+    """
+    pass
+
+
+def get_robot_to_which_wt_sell(robot):
+    """
+    运筹机器人去哪个工作台卖出物品
+    :param robot: 机器人
+    :return:
+    """
+
+
+def rebot_to_wt_route(robot, wt):
+    """
+    rebot_to_wt_route: 机器人从自身到工作台的路线规划
+    :param robot: 机器人
+    :param wt: 工作台
+    :return: 返回机器人到工作台的路线规划，用列表表示
+    """
+    robot.route = ["forward", "rotate"]*500
+
+        
+
+def A_star_search(obstacles,robot, wt):
+    """
+    A_star_search: A*算法搜索机器人到工作台的路线规划
+    :param robot: 机器人
+    :param wt: 工作台
+    :return: 返回机器人到工作台的路线规划，用列表表示
+    """
+    
+    q = queue.PriorityQueue()
+    pass
+    
+def is_rebot_routes(robot):
+    """
+    is_rebot_routes: 判断机器人是否有路线规划
+    :param robot: 机器人
+    :return: 机器人是否有路线规划
+    """
+    if robot.route:
+        return True
+    else:
+        return False
+
+def rebot_to_wt(robot,wt):
+    """
+    rebot_to_wt: 机器人按照路线规划从自身到工作台
+    :param robot: 机器人
+    :param wt: 工作台
+    :param routes: 路线规划的操作队列
+    :return:
+    """
+
+    if robot.route.pop(0) == "forward":
+        robot.forward(ROBOT_MAX_FORWARD_SPEED)
+        logging.info("forward")
+    if robot.route.pop(0)== "rotate":
+        robot.rotate(ROBOT_MAX_ROTATE_SPEED)
+        logging.info("rotate")
+    
+
+
+
+def is_collision(robot1, robot2):
+    """
+    is_collision: 判断机器人是否会产生碰撞
+    :param robot1: 机器人1
+    :param robot2: 机器人2
+    :return: 机器人是否会产生碰撞
+    """
+    pass
+
+def collision(robot1, robot2):
+    """
+    collision: 机器人之间的碰撞
+    :param robot1: 机器人1
+    :param robot2: 机器人2
+    :return:
+    """
+    pass
+
+
 def action():
     """
     action: 选手程序的主要逻辑
     :return:
     """
     # 最大前进速度前进
-    map_info.robots[1].forward(ROBOT_MAX_FORWARD_SPEED)
+    # map_info.robots[1].forward(ROBOT_MAX_FORWARD_SPEED)
+    # 最大旋转速度旋转
+    # map_info.robots[1].rotate(ROBOT_MAX_ROTATE_SPEED)
+    if map_info.robots[0].task == 1:
+        rebot_to_wt_route(map_info.robots[0],map_info.workbenches[0])
+        map_info.robots[0].task = 0
+    if is_rebot_routes:
+        rebot_to_wt(map_info.robots[0],map_info.workbenches[0])
 
 
 if __name__ == "__main__":
